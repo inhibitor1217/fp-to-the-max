@@ -72,13 +72,20 @@ const main = async () => {
 
     console.log(`Do you want to continue, ${name}?`)
 
-    switch (await readLine()) {
-      case 'y':
-        exec = true
-        break
-      case 'n':
-        exec = false
-        break
+    let cont = true
+    while (cont) {
+      cont = false
+      switch ((await readLine()).toLowerCase()) {
+        case 'y':
+          exec = true
+          break
+        case 'n':
+          exec = false
+          break
+        default:
+          cont = true
+          break
+      }
     }
   }
 }
