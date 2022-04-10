@@ -4,6 +4,9 @@
   "author": "inhibitor <inhibitor@kaist.ac.kr>",
   "license": "MIT",
   "private": true,
+  "scripts": {
+    "start": "ts-node src/index.ts"
+  },
   "devDependencies": {
     "@types/node": "^17.0.23",
     "ts-node": "^10.7.0",
