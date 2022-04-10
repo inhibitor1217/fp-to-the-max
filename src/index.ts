@@ -7,6 +7,14 @@ namespace F {
     <A, B, C>(a: A, ab: (a: A) => B, bc: (b: B) => C): C
     <A, B, C, D>(a: A, ab: (a: A) => B, bc: (b: B) => C, cd: (c: C) => D): D
     <A, B, C, D, E>(a: A, ab: (a: A) => B, bc: (b: B) => C, cd: (c: C) => D, de: (d: D) => E): E
+    <A, B, C, D, E, F>(
+      a: A, ab: (a: A) => B, bc: (b: B) => C, cd: (c: C) => D, de: (d: D) => E,
+      ef: (e: E) => F,
+    ): F
+    <A, B, C, D, E, F, G>(
+      a: A, ab: (a: A) => B, bc: (b: B) => C, cd: (c: C) => D, de: (d: D) => E,
+      ef: (e: E) => F, fg: (f: F) => G
+    ): G
   }
 
   export const pipe: Pipe = (a: any, ...fs: any[]) => fs.reduce((p, f) => f(p), a)
@@ -77,6 +85,21 @@ const getLine = (): T.Task<string> =>
 const randomInt = (bound: number): T.Task<number> =>
   () => Promise.resolve(Math.floor(Math.random() * bound))
 
+const checkContinue = (): T.Task<boolean> =>
+  F.pipe(
+    getLine(),
+    T.chain(line => {
+      switch (line.toLowerCase()) {
+        case 'y':
+          return T.of(true)
+        case 'n':
+          return T.of(false)
+        default:
+          return checkContinue()
+      }
+    }),
+  )
+
 const gameLoop = (name: string): T.Task<void> =>
   F.pipe(
     randomInt(5),
@@ -97,35 +120,16 @@ const gameLoop = (name: string): T.Task<void> =>
        )
     ),
     T.chain(() => putLine(`Do you want to continue, ${name}?`)),
+    T.chain(checkContinue),
+    T.chain(cont => cont ? gameLoop(name) : T.of(void 0)),
   )
 
-const main = (): T.Task<void> => {
-  return F.pipe(
+const main = (): T.Task<void> =>
+  F.pipe(
     putLine('What is your name?'),
     T.chain(getLine),
     T.chainFirst(name => putLine(`Hello, ${name}, welcome to the game!`)),
     T.chain(gameLoop),
   )
-
-  // let exec = true
-
-  // while (exec) {
-  //   let cont = true
-  //   while (cont) {
-  //     cont = false
-  //     switch ((await readLine()).toLowerCase()) {
-  //       case 'y':
-  //         exec = true
-  //         break
-  //       case 'n':
-  //         exec = false
-  //         break
-  //       default:
-  //         cont = true
-  //         break
-  //     }
-  //   }
-  // }
-}
 
 main()()
