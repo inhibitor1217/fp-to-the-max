@@ -1,5 +1,4 @@
-import { createInterface } from 'readline'
-import { F, HKT, O, T } from './lib'
+import { F, HKT, O } from '../lib'
 
 const parseInt = (str: string): O.Option<number> => {
   const s = +str
@@ -8,23 +7,23 @@ const parseInt = (str: string): O.Option<number> => {
 }
 
 /* type classes */
-interface Program<F extends HKT.URIS> {
+export interface Program<F extends HKT.URIS> {
   readonly finish: <A>(a: A) => HKT.Kind<F, A>
   readonly map: <A, B>(ab: (a: A) => B) => (fa: HKT.Kind<F, A>) => HKT.Kind<F, B>
   readonly chain: <A, B>(afb: (a: A) => HKT.Kind<F, B>) => (fa: HKT.Kind<F, A>) => HKT.Kind<F, B>
   readonly chainFirst: <A, B>(afb: (a: A) => HKT.Kind<F, B>) => (fa: HKT.Kind<F, A>) => HKT.Kind<F, A>
 }
 
-interface Console<F extends HKT.URIS> {
+export interface Console<F extends HKT.URIS> {
   readonly putLine: (str: string) => HKT.Kind<F, void>
   readonly getLine: () => HKT.Kind<F, string>
 }
 
-interface Random<F extends HKT.URIS> {
+export interface Random<F extends HKT.URIS> {
   readonly randomInt: (bound: number) => HKT.Kind<F, number>
 }
 
-interface Main<F extends HKT.URIS> extends
+export interface Main<F extends HKT.URIS> extends
   Program<F>,
   Console<F>,
   Random<F> {}
@@ -96,7 +95,7 @@ const gameLoop = <URI extends HKT.URIS>(
   )
 }
 
-const main = <URI extends HKT.URIS>(app: Main<URI>): HKT.Kind<URI, void> => {
+export const main = <URI extends HKT.URIS>(app: Main<URI>): HKT.Kind<URI, void> => {
   const {
     chain,
     chainFirst,
@@ -111,36 +110,3 @@ const main = <URI extends HKT.URIS>(app: Main<URI>): HKT.Kind<URI, void> => {
     chain(name => gameLoop(app, name)),
   )
 }
-
-namespace RealApplication {
-  const program: Program<T.URI> = {
-    map: T.map,
-    chain: T.chain,
-    chainFirst: T.chainFirst,
-    finish: T.of,
-  }
-
-  const console: Console<T.URI> = {
-    putLine: str => () => Promise.resolve(global.console.log(str)),
-    getLine: () =>
-      () => new Promise(resolve => {
-        const rl = createInterface({ input: process.stdin, output: process.stdout })
-        rl.question('> ', answer => {
-          rl.close()
-          resolve(answer)
-        })
-      }),
-  }
-
-  const random: Random<T.URI> = {
-    randomInt: bound => () => Promise.resolve(Math.floor(Math.random() * bound))
-  }
-
-  export const app: Main<T.URI> = {
-    ...program,
-    ...console,
-    ...random,
-  }
-}
-
-main(RealApplication.app)()
