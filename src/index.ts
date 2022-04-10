@@ -25,6 +25,9 @@ namespace T {
     (): Promise<A>
   }
 
+  export const URI = 'Task'
+  export type URI = typeof URI
+
   export const map = <A, B>(f: (a: A) => B) => (fa: Task<A>): Task<B> => () => fa().then(f)
 
   export const chain = <A, B>(f: (a: A) => Task<B>) => (fa: Task<A>): Task<B> => () => fa().then(a => f(a)())
@@ -73,7 +76,9 @@ const parseInt = (str: string): O.Option<number> => {
 
 /* Higher ordered types (a.k.a Kinds) */
 namespace HKT {
-  interface URItoKind<A> {}
+  interface URItoKind<A> {
+    readonly [T.URI]: T.Task<A>
+  }
 
   export type URIS = keyof URItoKind<any>
 
@@ -104,6 +109,37 @@ interface Main<F extends HKT.URIS> extends
   Program<F>,
   Console<F>,
   Random<F> {}
+
+namespace RealApplication {
+  const program: Program<T.URI> = {
+    map: T.map,
+    chain: T.chain,
+    chainFirst: T.chainFirst,
+    finish: T.of,
+  }
+
+  const console: Console<T.URI> = {
+    putLine: str => () => Promise.resolve(global.console.log(str)),
+    getLine: () =>
+      () => new Promise(resolve => {
+        const rl = createInterface({ input: process.stdin, output: process.stdout })
+        rl.question('> ', answer => {
+          rl.close()
+          resolve(answer)
+        })
+      }),
+  }
+
+  const random: Random<T.URI> = {
+    randomInt: bound => () => Promise.resolve(Math.floor(Math.random() * bound))
+  }
+
+  export const app: Main<T.URI> = {
+    ...program,
+    ...console,
+    ...random,
+  }
+}
 
 const putLine = (str: string): T.Task<void> => () => Promise.resolve(console.log(str))
 
