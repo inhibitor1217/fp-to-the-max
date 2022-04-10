@@ -1,5 +1,17 @@
 import { createInterface } from 'readline'
 
+namespace T {
+  export interface Task<A> {
+    (): Promise<A>
+  }
+
+  export const map = <A, B>(f: (a: A) => B) => (fa: Task<A>): Task<B> => () => fa().then(f)
+
+  export const chain = <A, B>(f: (a: A) => Task<B>) => (fa: Task<A>): Task<B> => () => fa().then(a => f(a)())
+
+  export const of = <A>(a: A): Task<A> => () => Promise.resolve(a)
+}
+
 namespace O {
   export interface None {
     readonly _tag: 'None'
@@ -36,8 +48,10 @@ const parseInt = (str: string): O.Option<number> => {
   return O.some(s)
 }
 
-const readLine = (): Promise<string> =>
-  new Promise(resolve => {
+const putLine = (str: string): T.Task<void> => () => Promise.resolve(console.log(str))
+
+const getLine = (): T.Task<string> =>
+  () => new Promise(resolve => {
     const rl = createInterface({ input: process.stdin, output: process.stdout })
     rl.question('> ', answer => {
       rl.close()
@@ -48,46 +62,44 @@ const readLine = (): Promise<string> =>
 const randomInt = (bound: number): number =>
   Math.floor(Math.random() * bound)
 
-const main = async () => {
-  console.log('What is your name?')
+const main = (): T.Task<any> => {
+  return T.chain(name => putLine(`Hello, ${name}, welcome to the game!`))
+    (T.chain(getLine)
+    (putLine('What is your name?')))
 
-  const name = await readLine()
+  // let exec = true
 
-  console.log(`Hello, ${name}, welcome to the game!`)
+  // while (exec) {
+  //   const num = randomInt(5) + 1
 
-  let exec = true
+  //   putLine(`Dear ${name}, please guess a number from 1 to 5:`)
 
-  while (exec) {
-    const num = randomInt(5) + 1
+  //   O.fold(
+  //     () => putLine('You did not enter a number'),
+  //     (guess: number) => {
+  //       if (guess === num) putLine(`You guessed right, ${name}!`)
+  //       else putLine(`You guessed wrong, ${name}! The number was: ${num}`)
+  //     }
+  //   )(parseInt(await readLine()))
 
-    console.log(`Dear ${name}, please guess a number from 1 to 5:`)
+  //   putLine(`Do you want to continue, ${name}?`)
 
-    O.fold(
-      () => console.log('You did not enter a number'),
-      (guess: number) => {
-        if (guess === num) console.log(`You guessed right, ${name}!`)
-        else console.log(`You guessed wrong, ${name}! The number was: ${num}`)
-      }
-    )(parseInt(await readLine()))
-
-    console.log(`Do you want to continue, ${name}?`)
-
-    let cont = true
-    while (cont) {
-      cont = false
-      switch ((await readLine()).toLowerCase()) {
-        case 'y':
-          exec = true
-          break
-        case 'n':
-          exec = false
-          break
-        default:
-          cont = true
-          break
-      }
-    }
-  }
+  //   let cont = true
+  //   while (cont) {
+  //     cont = false
+  //     switch ((await readLine()).toLowerCase()) {
+  //       case 'y':
+  //         exec = true
+  //         break
+  //       case 'n':
+  //         exec = false
+  //         break
+  //       default:
+  //         cont = true
+  //         break
+  //     }
+  //   }
+  // }
 }
 
-main()
+main()()
