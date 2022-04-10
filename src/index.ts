@@ -1,5 +1,15 @@
 import { createInterface } from 'readline'
 
+namespace F {
+  export type Pipe = {
+    <A>(a: A): A
+    <A, B>(a: A, ab: (a: A) => B): B
+    <A, B, C>(a: A, ab: (a: A) => B, bc: (b: B) => C): C
+  }
+
+  export const pipe: Pipe = (a: any, ...fs: any[]) => fs.reduce((p, f) => f(p), a)
+}
+
 namespace T {
   export interface Task<A> {
     (): Promise<A>
@@ -62,10 +72,12 @@ const getLine = (): T.Task<string> =>
 const randomInt = (bound: number): number =>
   Math.floor(Math.random() * bound)
 
-const main = (): T.Task<any> => {
-  return T.chain(name => putLine(`Hello, ${name}, welcome to the game!`))
-    (T.chain(getLine)
-    (putLine('What is your name?')))
+const main = (): T.Task<void> => {
+  return F.pipe(
+    putLine('What is your name?'),
+    T.chain(getLine),
+    T.chain(name => putLine(`Hello, ${name}, welcome to the game!`))
+  )
 
   // let exec = true
 
