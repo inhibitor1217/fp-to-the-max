@@ -74,10 +74,30 @@ const getLine = (): T.Task<string> =>
     })
   })
 
-const randomInt = (bound: number): number =>
-  Math.floor(Math.random() * bound)
+const randomInt = (bound: number): T.Task<number> =>
+  () => Promise.resolve(Math.floor(Math.random() * bound))
 
-const gameLoop = (name: string): T.Task<void> => T.of(void 0)
+const gameLoop = (name: string): T.Task<void> =>
+  F.pipe(
+    randomInt(5),
+    T.map(num => num + 1),
+    T.chainFirst(() => putLine(`Dear ${name}, please guess a number from 1 to 5:`)),
+    T.chain(num =>
+       F.pipe(
+         getLine(),
+         T.map(parseInt),
+         T.chain(O.fold(
+           () => putLine('You did not enter a number'),
+           guess => (
+              guess === num
+                ? putLine(`You guessed right, ${name}!`)
+                : putLine(`You guessed wrong, ${name}! The number was: ${num}`)
+           ),
+         )),
+       )
+    ),
+    T.chain(() => putLine(`Do you want to continue, ${name}?`)),
+  )
 
 const main = (): T.Task<void> => {
   return F.pipe(
@@ -90,20 +110,6 @@ const main = (): T.Task<void> => {
   // let exec = true
 
   // while (exec) {
-  //   const num = randomInt(5) + 1
-
-  //   putLine(`Dear ${name}, please guess a number from 1 to 5:`)
-
-  //   O.fold(
-  //     () => putLine('You did not enter a number'),
-  //     (guess: number) => {
-  //       if (guess === num) putLine(`You guessed right, ${name}!`)
-  //       else putLine(`You guessed wrong, ${name}! The number was: ${num}`)
-  //     }
-  //   )(parseInt(await readLine()))
-
-  //   putLine(`Do you want to continue, ${name}?`)
-
   //   let cont = true
   //   while (cont) {
   //     cont = false
