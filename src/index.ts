@@ -5,6 +5,8 @@ namespace F {
     <A>(a: A): A
     <A, B>(a: A, ab: (a: A) => B): B
     <A, B, C>(a: A, ab: (a: A) => B, bc: (b: B) => C): C
+    <A, B, C, D>(a: A, ab: (a: A) => B, bc: (b: B) => C, cd: (c: C) => D): D
+    <A, B, C, D, E>(a: A, ab: (a: A) => B, bc: (b: B) => C, cd: (c: C) => D, de: (d: D) => E): E
   }
 
   export const pipe: Pipe = (a: any, ...fs: any[]) => fs.reduce((p, f) => f(p), a)
@@ -18,6 +20,9 @@ namespace T {
   export const map = <A, B>(f: (a: A) => B) => (fa: Task<A>): Task<B> => () => fa().then(f)
 
   export const chain = <A, B>(f: (a: A) => Task<B>) => (fa: Task<A>): Task<B> => () => fa().then(a => f(a)())
+
+  export const chainFirst = <A, B>(f: (a: A) => Task<B>) => (fa: Task<A>): Task<A> => () =>
+    fa().then(a => f(a)().then(() => a))
 
   export const of = <A>(a: A): Task<A> => () => Promise.resolve(a)
 }
@@ -72,11 +77,14 @@ const getLine = (): T.Task<string> =>
 const randomInt = (bound: number): number =>
   Math.floor(Math.random() * bound)
 
+const gameLoop = (name: string): T.Task<void> => T.of(void 0)
+
 const main = (): T.Task<void> => {
   return F.pipe(
     putLine('What is your name?'),
     T.chain(getLine),
-    T.chain(name => putLine(`Hello, ${name}, welcome to the game!`))
+    T.chainFirst(name => putLine(`Hello, ${name}, welcome to the game!`)),
+    T.chain(gameLoop),
   )
 
   // let exec = true
