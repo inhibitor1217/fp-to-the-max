@@ -71,6 +71,40 @@ const parseInt = (str: string): O.Option<number> => {
   return O.some(s)
 }
 
+/* Higher ordered types (a.k.a Kinds) */
+namespace HKT {
+  interface URItoKind<A> {}
+
+  export type URIS = keyof URItoKind<any>
+
+  /**
+   * `* -> *`
+   */
+  export type Kind<URI extends URIS, A> = URI extends URIS ? URItoKind<A>[URI] : any
+}
+
+/* type classes */
+interface Program<F extends HKT.URIS> {
+  readonly finish: <A>(a: A) => HKT.Kind<F, A>
+  readonly map: <A, B>(ab: (a: A) => B) => (fa: HKT.Kind<F, A>) => HKT.Kind<F, B>
+  readonly chain: <A, B>(afb: (a: A) => HKT.Kind<F, B>) => (fa: HKT.Kind<F, A>) => HKT.Kind<F, B>
+  readonly chainFirst: <A, B>(afb: (a: A) => HKT.Kind<F, B>) => (fa: HKT.Kind<F, A>) => HKT.Kind<F, A>
+}
+
+interface Console<F extends HKT.URIS> {
+  readonly putLine: (str: string) => HKT.Kind<F, void>
+  readonly getLine: () => HKT.Kind<F, string>
+}
+
+interface Random<F extends HKT.URIS> {
+  readonly randomInt: (bound: number) => HKT.Kind<F, number>
+}
+
+interface Main<F extends HKT.URIS> extends
+  Program<F>,
+  Console<F>,
+  Random<F> {}
+
 const putLine = (str: string): T.Task<void> => () => Promise.resolve(console.log(str))
 
 const getLine = (): T.Task<string> =>
