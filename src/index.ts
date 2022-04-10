@@ -141,45 +141,58 @@ namespace RealApplication {
   }
 }
 
-const putLine = (str: string): T.Task<void> => () => Promise.resolve(console.log(str))
+const checkContinue = <URI extends HKT.URIS>(
+  app:
+    & Program<URI>
+    & Console<URI>,
+): HKT.Kind<URI, boolean> => {
+  const {
+    finish,
+    chain,
+    getLine,
+  } = app
 
-const getLine = (): T.Task<string> =>
-  () => new Promise(resolve => {
-    const rl = createInterface({ input: process.stdin, output: process.stdout })
-    rl.question('> ', answer => {
-      rl.close()
-      resolve(answer)
-    })
-  })
-
-const randomInt = (bound: number): T.Task<number> =>
-  () => Promise.resolve(Math.floor(Math.random() * bound))
-
-const checkContinue = (): T.Task<boolean> =>
-  F.pipe(
+  return F.pipe(
     getLine(),
-    T.chain(line => {
+    chain(line => {
       switch (line.toLowerCase()) {
         case 'y':
-          return T.of(true)
+          return finish(true)
         case 'n':
-          return T.of(false)
+          return finish(false)
         default:
-          return checkContinue()
+          return checkContinue(app)
       }
     }),
   )
+}
 
-const gameLoop = (name: string): T.Task<void> =>
-  F.pipe(
+const gameLoop = <URI extends HKT.URIS>(
+  app:
+    & Program<URI>
+    & Console<URI>
+    & Random<URI>,
+  name: string,
+): HKT.Kind<URI, void> => {
+  const {
+    finish,
+    map,
+    chain,
+    chainFirst,
+    putLine,
+    getLine,
+    randomInt,
+  } = app
+
+  return F.pipe(
     randomInt(5),
-    T.map(num => num + 1),
-    T.chainFirst(() => putLine(`Dear ${name}, please guess a number from 1 to 5:`)),
-    T.chain(num =>
+    map(num => num + 1),
+    chainFirst(() => putLine(`Dear ${name}, please guess a number from 1 to 5:`)),
+    chain(num =>
        F.pipe(
          getLine(),
-         T.map(parseInt),
-         T.chain(O.fold(
+         map(parseInt),
+         chain(O.fold(
            () => putLine('You did not enter a number'),
            guess => (
               guess === num
@@ -189,17 +202,26 @@ const gameLoop = (name: string): T.Task<void> =>
          )),
        )
     ),
-    T.chain(() => putLine(`Do you want to continue, ${name}?`)),
-    T.chain(checkContinue),
-    T.chain(cont => cont ? gameLoop(name) : T.of(void 0)),
+    chain(() => putLine(`Do you want to continue, ${name}?`)),
+    chain(() => checkContinue(app)),
+    chain(cont => cont ? gameLoop(app, name) : finish(void 0)),
   )
+}
 
-const main = (): T.Task<void> =>
-  F.pipe(
+const main = <URI extends HKT.URIS>(app: Main<URI>): HKT.Kind<URI, void> => {
+  const {
+    chain,
+    chainFirst,
+    putLine,
+    getLine,
+  } = app
+
+  return F.pipe(
     putLine('What is your name?'),
-    T.chain(getLine),
-    T.chainFirst(name => putLine(`Hello, ${name}, welcome to the game!`)),
-    T.chain(gameLoop),
+    chain(getLine),
+    chainFirst(name => putLine(`Hello, ${name}, welcome to the game!`)),
+    chain(name => gameLoop(app, name)),
   )
+}
 
-main()()
+main(RealApplication.app)()
