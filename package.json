@@ -1,0 +1,15 @@
+{
+  "name": "@inhibitor1217/fp-to-the-max",
+  "version": "1.0.0",
+  "author": "inhibitor <inhibitor@kaist.ac.kr>",
+  "license": "MIT",
+  "private": true,
+  "devDependencies": {
+    "@types/node": "^17.0.23",
+    "ts-node": "^10.7.0",
+    "typescript": "^4.6.3"
+  },
+  "dependencies": {
+    "fp-ts": "^2.11.9"
+  }
+}
