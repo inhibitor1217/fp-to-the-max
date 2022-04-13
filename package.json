@@ -5,7 +5,8 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "start": "ts-node src/app/real.ts"
+    "start": "ts-node src/app/real.ts",
+    "test": "ts-node src/app/test.ts"
   },
   "devDependencies": {
     "@types/node": "^17.0.23",
